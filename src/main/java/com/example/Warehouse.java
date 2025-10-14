@@ -3,6 +3,7 @@ package com.example;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Warehouse {
 
@@ -58,24 +59,20 @@ public void updateProductPrice(UUID id, BigDecimal newPrice) {
         return Optional.ofNullable(products.get(id));
     }
 
-public List<Perishable> expiredProducts() {
-    List<Perishable> expiredProducts = new ArrayList<>();
-    for (Product p : products.values()) {
-        if (p instanceof Perishable perishable && perishable.isExpired()) {
-            expiredProducts.add(perishable);
-        }
+    public List<Perishable> expiredProducts() {
+        LocalDate today = LocalDate.now();
+        return products.values().stream()
+                .filter(p -> p instanceof Perishable)
+                .map(p -> (Perishable) p)
+                .filter(per -> per.expirationDate().isBefore(today))
+                .collect(Collectors.toList());
     }
-    return expiredProducts;
-}
 
     public List<Shippable> shippableProducts() {
-        List<Shippable> shippableProducts = new ArrayList<>();
-        for (Product p : products.values()) {
-            if (p instanceof Shippable shippable) {
-                shippableProducts.add(shippable);
-            }
-        }
-        return shippableProducts;
+        return products.values().stream()
+                .filter(p -> p instanceof Shippable)
+                .map(p -> (Shippable) p)
+                .collect(Collectors.toList());
     }
 
 public void remove(UUID id) {
@@ -91,12 +88,9 @@ public boolean isEmpty() {
         return products.isEmpty();
 }
 
-    public Map<Category, List<Product>> getProductsGroupedByCategories() {
-        Map<Category, List<Product>> grouped = new HashMap<>();
-        for (Product p : products.values()) {
-            grouped.computeIfAbsent(p.category(), k -> new ArrayList<>()).add(p);
-        }
-        return grouped;
+public Map<Category, List<Product>> getProductsGroupedByCategories() {
+
+        return products.values().stream().collect(Collectors.groupingBy(Product::category));
     }
 
     @Override

@@ -200,7 +200,7 @@ class EdgeCaseTest {
                             new BigDecimal("15.00").add(new BigDecimal(i % 3)), LocalDate.now().plusDays(5), BigDecimal.ONE))
             );
             Product outlierHigh = new FoodProduct(UUID.randomUUID(), "Expensive", Category.of("Test"),
-                    new BigDecimal("500.00"), LocalDate.now().plusDays(5), BigDecimal.ONE);
+                    new BigDecimal("35.00"), LocalDate.now().plusDays(5), BigDecimal.ONE);
             Product outlierLow = new FoodProduct(UUID.randomUUID(), "Cheap", Category.of("Test"),
                     new BigDecimal("0.01"), LocalDate.now().plusDays(5), BigDecimal.ONE);
 
