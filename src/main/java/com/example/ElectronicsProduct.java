@@ -22,15 +22,7 @@ public class ElectronicsProduct extends Product implements Shippable{
         this.weight = weight;
     }
 
-    private static BigDecimal validatePrice(BigDecimal price){
-        if(price == null || price.compareTo(BigDecimal.ZERO) <= 0){
-            throw new IllegalArgumentException("Price cannot be null");
-        }return price;
-    }
 
-    private int warrantyMonths() {
-        return warrantyMonths;
-    }
     @Override
     public double weight() {
         return weight.doubleValue();
@@ -38,7 +30,6 @@ public class ElectronicsProduct extends Product implements Shippable{
 
     @Override
     public BigDecimal calculateShippingCost() {
-        BigDecimal shippingCost = BigDecimal.ZERO;
 
         BigDecimal cost = new BigDecimal("79");
         BigDecimal weightThreshold = new BigDecimal("5.0");
