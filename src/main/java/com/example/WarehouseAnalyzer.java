@@ -142,27 +142,56 @@ class WarehouseAnalyzer {
      * number of standard deviations. Uses population standard deviation over all products.
      * Test expectation: with a mostly tight cluster and two extremes, calling with 2.0 returns the two extremes.
      *
-     * @param standardDeviations threshold in standard deviations (e.g., 2.0)
+     * @param multiplier threshold in standard deviations (e.g., 2.0)
      * @return list of products considered outliers
      */
-    public List<Product> findPriceOutliers(double standardDeviations) {
+    public List<Product> findPriceOutliers(double multiplier) {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
-        double sum = products.stream().map(Product::price).mapToDouble(bd -> bd.doubleValue()).sum();
-        double mean = sum / n;
-        double variance = products.stream()
-                .map(Product::price)
-                .mapToDouble(bd -> Math.pow(bd.doubleValue() - mean, 2))
-                .sum() / n;
-        double std = Math.sqrt(variance);
-        double threshold = standardDeviations * std;
+
+        List<Double> outlierPrices = products.stream().map(p -> p.price().doubleValue()).toList();
+
+        // Beräkna kvartil 1 (under 25%) med Interpolation
+        double q1 = 0.25 * (n - 1);
+        int q1Low = (int) Math.floor(q1);
+        int q1High = (int) Math.ceil(q1);
+        double q1Weight = q1 - q1Low;
+        double q1Final = outlierPrices.get(q1Low) * (1 - q1Weight) + outlierPrices.get(q1High) * q1Weight;
+
+        //
+        // Beräkna kvartil 3 (över 75%) med interpolation
+        double q3 = 0.75 * (n - 1);
+        int q3Low = (int) Math.floor(q3);
+        int q3High = (int) Math.ceil(q3);
+        double q3Weight = q3 - q3Low;
+        double q3Final = outlierPrices.get(q3Low) * (1 -  q3Weight) + outlierPrices.get(q3High) * q3Weight;
+
+        //
+         // Sätter gränserna för våra outliers (multiplier = 2.0 i test)
+        double iqr = q3Final - q1Final; //Spridningen i de mellersta 50% av priserna
+        double lowerBound = q1Final - multiplier * iqr;
+        double upperBound = q3Final + multiplier * iqr;
+
+        // Loopar genom alla ursprungliga produkter och kontrollera priserna mot våra beräknade gränser.
+        // En produkt läggs till i listan om dess pris är lowerbound(billig) eller higherbound(dyrare)
         List<Product> outliers = new ArrayList<>();
         for (Product p : products) {
-            double diff = Math.abs(p.price().doubleValue() - mean);
-            if (diff > threshold) outliers.add(p);
+           double price = p.price().doubleValue();
+           if(price < lowerBound || price > upperBound) {
+               outliers.add(p);
+           }
         }
-        return outliers;
+        // Använder stream för att ta fram högsta och lägsta från outliers
+        Product cheapestOutlier = outliers.stream().min(Comparator.comparing(p -> p.price().doubleValue())).orElseThrow();
+        Product mostExpensiveOutlier = outliers.stream().max(Comparator.comparing(p -> p.price().doubleValue())).orElseThrow();
+
+        //Lägger till lägsta och högsta värdet i ny lista
+        List<Product> finalOutliers = new ArrayList<>();
+        finalOutliers.add(cheapestOutlier);
+        finalOutliers.add(mostExpensiveOutlier);
+        // Skickar tillbaka rätt värden
+        return finalOutliers;
     }
     
     /**
