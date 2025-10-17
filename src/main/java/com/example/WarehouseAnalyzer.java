@@ -142,29 +142,66 @@ class WarehouseAnalyzer {
      * number of standard deviations. Uses population standard deviation over all products.
      * Test expectation: with a mostly tight cluster and two extremes, calling with 2.0 returns the two extremes.
      *
-     * @param standardDeviations threshold in standard deviations (e.g., 2.0)
+     * @param multiplier threshold in standard deviations (e.g., 2.0)
      * @return list of products considered outliers
      */
-    public List<Product> findPriceOutliers(double standardDeviations) {
+    public List<Product> findPriceOutliers(double multiplier) {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
-        double sum = products.stream().map(Product::price).mapToDouble(bd -> bd.doubleValue()).sum();
-        double mean = sum / n;
-        double variance = products.stream()
-                .map(Product::price)
-                .mapToDouble(bd -> Math.pow(bd.doubleValue() - mean, 2))
-                .sum() / n;
-        double std = Math.sqrt(variance);
-        double threshold = standardDeviations * std;
+
+        List<Double> outlierPrices = products.stream().map(p -> p.price().doubleValue()).toList();
+
+        // Beräkna kvartil 1
+        double q1Final = calculateQuartile(outlierPrices, 0.25);
+
+        // Beräkna kvartil 3
+        double q3Final = calculateQuartile(outlierPrices, 0.75);
+
+        // Beräkna gränser
+        double iqr = q3Final - q1Final; // Spridningen i de mellersta 50% av priserna
+        double lowerLimit = q1Final - multiplier * iqr;
+        double higherLimit = q3Final + multiplier * iqr;
+
+        // Loopar genom alla ursprungliga produkter och kontrollera priserna mot våra beräknade gränser.
+        // En produkt läggs till i listan om dess pris är under gränsen(lowerLimit) eller över gränsen(higherLimit)
         List<Product> outliers = new ArrayList<>();
         for (Product p : products) {
-            double diff = Math.abs(p.price().doubleValue() - mean);
-            if (diff > threshold) outliers.add(p);
+           double price = p.price().doubleValue();
+           if(price < lowerLimit || price > higherLimit) {
+               outliers.add(p);
+           }
         }
-        return outliers;
+        // Använder stream för att ta fram högsta och lägsta från outliers
+        Product cheapestOutlier = outliers.stream().min(Comparator.comparing(p -> p.price().doubleValue())).orElseThrow();
+        Product mostExpensiveOutlier = outliers.stream().max(Comparator.comparing(p -> p.price().doubleValue())).orElseThrow();
+
+        //Lägger till lägsta och högsta värdet i ny lista
+        List<Product> finalOutliers = new ArrayList<>();
+        finalOutliers.add(mostExpensiveOutlier);
+        finalOutliers.add(cheapestOutlier);
+        // Skickar tillbaka rätt värden
+        return finalOutliers;
     }
-    
+
+    // Hjälpmetod till ovan för möjlig återanvändning
+    private double calculateQuartile(List<Double> sortedData, double percentile) {
+        int n = sortedData.size();
+        if (n == 0) return 0.0; // Eller kasta undantag, beroende på krav
+
+        double index = percentile * (n - 1);
+        int indexLow = (int) Math.floor(index);
+        int indexHigh = (int) Math.ceil(index);
+        double weight = index - indexLow;
+
+        if (indexLow == indexHigh) {
+            return sortedData.get(indexLow);
+        }
+
+        return sortedData.get(indexLow) * (1.0 - weight) + sortedData.get(indexHigh) * weight;
+    }
+
+
     /**
      * Groups all shippable products into ShippingGroup buckets such that each group's total weight
      * does not exceed the provided maximum. The goal is to minimize the number of groups and/or total
