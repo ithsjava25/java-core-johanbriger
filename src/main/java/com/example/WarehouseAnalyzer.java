@@ -178,8 +178,8 @@ class WarehouseAnalyzer {
 
         //Lägger till lägsta och högsta värdet i ny lista
         List<Product> finalOutliers = new ArrayList<>();
-        finalOutliers.add(cheapestOutlier);
         finalOutliers.add(mostExpensiveOutlier);
+        finalOutliers.add(cheapestOutlier);
         // Skickar tillbaka rätt värden
         return finalOutliers;
     }
