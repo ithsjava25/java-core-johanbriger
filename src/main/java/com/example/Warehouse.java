@@ -15,7 +15,7 @@ public class Warehouse {
     private Warehouse(String name) {
         this.name = name;
 
-}
+    }
 
     public static Warehouse getInstance(String name) {
         return INSTANCES.computeIfAbsent(name, Warehouse::new);
@@ -79,6 +79,8 @@ public class Warehouse {
 
         return products.values().stream().collect(Collectors.groupingBy(Product::category));
     }
+
+
 
     @Override
     public String toString() {

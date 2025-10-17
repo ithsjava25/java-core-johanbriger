@@ -33,6 +33,11 @@ public class FoodProduct extends Product implements Perishable, Shippable {
         return expirationDate;
     }
 
+    @Override
+    public boolean isExpired() {
+        return Perishable.super.isExpired();
+    }
+
 
     @Override
     public double weight() {
