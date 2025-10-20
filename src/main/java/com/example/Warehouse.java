@@ -48,6 +48,10 @@ public class Warehouse {
         return Optional.ofNullable(products.get(id));
     }
 
+    public Set<UUID> getChangedProducts() {
+        return Collections.unmodifiableSet(changedProducts);
+    }
+
     public List<Perishable> expiredProducts() {
         LocalDate today = LocalDate.now();
         return products.values().stream().filter(p -> p instanceof Perishable)
