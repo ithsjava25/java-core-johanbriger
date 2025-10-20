@@ -21,10 +21,16 @@ public class Warehouse {
         return INSTANCES.computeIfAbsent(name, Warehouse::new);
     }
 
+    public static Warehouse getInstance(){
+        return getInstance("default");
+    }
+
     public void addProduct(Product product) {
         if(product == null) {
-
             throw new IllegalArgumentException("Product cannot be null.");
+        }
+        if(products.putIfAbsent(product.uuid(), product) != null) {
+            throw new IllegalArgumentException("Product with that id already exists, use updateProduct for updates.");
         }
         products.put(product.uuid(), product);
     }
