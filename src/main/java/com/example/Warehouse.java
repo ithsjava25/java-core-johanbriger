@@ -34,7 +34,6 @@ public class Warehouse {
         return List.copyOf(products.values());
     }
 
-
     public void updateProductPrice(UUID id, BigDecimal newPrice) {
     Product product = products.get(id);
         if(product == null) {
@@ -45,6 +44,7 @@ public class Warehouse {
 }
 
     public Optional<Product> getProductById(UUID id) {
+
         return Optional.ofNullable(products.get(id));
     }
 
@@ -76,16 +76,13 @@ public class Warehouse {
     }
 
     public Map<Category, List<Product>> getProductsGroupedByCategories() {
-
         return products.values().stream().collect(Collectors.groupingBy(Product::category));
     }
-
 
 
     @Override
     public String toString() {
         return "Warehouse{" + "name='" + name + '\'' + ", products=" + products.size() + '}';
     }
-
 
 }
